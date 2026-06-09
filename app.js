@@ -294,36 +294,10 @@ function openSlotModal(slot) {
   if (isAdmin && slot.status === 'free') {
     const assignBtn = document.createElement('button');
     assignBtn.className = 'success';
-    assignBtn.textContent = '📋 Назначить игрока...';
+    assignBtn.textContent = '📋 Назначить игрока';
     assignBtn.addEventListener('click', () => {
-      // Сначала покажем список игроков через prompt с подсказкой
-      const playerNames = state.players
-        .filter(p => p.name !== 'admin')
-        .map((p, i) => `${i+1}. ${p.name}`)
-        .join('\n');
-      const name = prompt(
-        `Введите имя игрока из списка:\n\n${playerNames}\n\nИли введите новое имя:`,
-        ''
-      );
-      if (!name) return;
-
-      let player = state.players.find(p => p.name === name && p.name !== 'admin');
-      if (!player) {
-        // Создаём нового игрока
-        player = {
-          id: 'p_' + Date.now(),
-          name: name.trim(),
-          phone: '',
-          isAdmin: false,
-        };
-        state.players.push(player);
-        savePlayers();
-      }
-      slot.status = 'booked';
-      slot.ownerId = player.id;
-      saveSlots();
       overlay.remove();
-      refresh();
+      showAssignModal(slot);
     });
     actionsDiv.appendChild(assignBtn);
   }
@@ -424,6 +398,88 @@ function openSlotModal(slot) {
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) overlay.remove();
   });
+  document.body.appendChild(overlay);
+}
+
+// ----- MODAL: ASSIGN PLAYER -----
+function showAssignModal(slot) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+
+  const court = state.courts.find(c => c.id === slot.courtId);
+  modal.innerHTML = `<h2>${court ? court.name : 'Корт'} — ${slot.date} в ${slot.time}</h2><p style="margin-bottom:12px;color:var(--text2);">Выберите игрока или создайте нового:</p>`;
+
+  // Select existing players
+  const playerSelect = document.createElement('select');
+  playerSelect.style.cssText = 'width:100%; padding:10px; margin-bottom:8px; border-radius:6px;';
+  const players = state.players.filter(p => p.name !== 'admin');
+  playerSelect.innerHTML = '<option value="">— выберите игрока —</option>';
+  players.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.phone ? `${p.name} (${p.phone})` : p.name;
+    playerSelect.appendChild(opt);
+  });
+  modal.appendChild(playerSelect);
+
+  // New player inline
+  const newRow = document.createElement('div');
+  newRow.style.cssText = 'display:flex; gap:8px; margin-bottom:8px;';
+  const newName = document.createElement('input');
+  newName.type = 'text';
+  newName.placeholder = 'Имя нового игрока';
+  newName.style.cssText = 'flex:1; padding:10px; border-radius:6px;';
+  const newPhone = document.createElement('input');
+  newPhone.type = 'text';
+  newPhone.placeholder = 'Телефон (СБП)';
+  newPhone.style.cssText = 'flex:1; padding:10px; border-radius:6px;';
+  newRow.appendChild(newName);
+  newRow.appendChild(newPhone);
+  modal.appendChild(newRow);
+
+  // Buttons
+  const actionsDiv = document.createElement('div');
+  actionsDiv.className = 'actions';
+
+  const assignBtn = document.createElement('button');
+  assignBtn.className = 'success';
+  assignBtn.textContent = '✅ Назначить';
+  assignBtn.addEventListener('click', () => {
+    let playerId = playerSelect.value;
+    if (!playerId) {
+      // Try to create new
+      const name = newName.value.trim();
+      if (!name) { alert('Выберите игрока или введите имя нового'); return; }
+      const phone = newPhone.value.trim();
+      const newPlayer = {
+        id: 'p_' + Date.now(),
+        name,
+        phone,
+        isAdmin: false,
+      };
+      state.players.push(newPlayer);
+      savePlayers();
+      playerId = newPlayer.id;
+    }
+    slot.status = 'booked';
+    slot.ownerId = playerId;
+    saveSlots();
+    overlay.remove();
+    refresh();
+  });
+  actionsDiv.appendChild(assignBtn);
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'outline';
+  cancelBtn.textContent = 'Отмена';
+  cancelBtn.addEventListener('click', () => overlay.remove());
+  actionsDiv.appendChild(cancelBtn);
+
+  modal.appendChild(actionsDiv);
+  overlay.appendChild(modal);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
 }
 
