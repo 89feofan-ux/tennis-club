@@ -245,32 +245,36 @@ function openSlotModal(slot) {
   const isAdmin = state.currentPlayer?.isAdmin || state.currentPlayer?.name === 'admin';
 
   // Если админ — показываем кнопку назначения
-  if (isAdmin) {
-    const selectLabel = document.createElement('p');
-    selectLabel.style.cssText = 'margin: 8px 0 4px; color: var(--text2); font-size: 0.85rem;';
-    selectLabel.textContent = 'Назначить игрока:';
-    modal.appendChild(selectLabel);
-
-    const playerSelect = document.createElement('select');
-    playerSelect.style.cssText = 'width:100%; padding:8px; margin-bottom:8px;';
-    const players = state.players.filter(p => p.name !== 'admin');
-    playerSelect.innerHTML = '<option value="">— выберите —</option>';
-    players.forEach(p => {
-      const opt = document.createElement('option');
-      opt.value = p.id;
-      opt.textContent = p.name;
-      playerSelect.appendChild(opt);
-    });
-    modal.appendChild(playerSelect);
-
+  if (isAdmin && slot.status === 'free') {
     const assignBtn = document.createElement('button');
     assignBtn.className = 'success';
-    assignBtn.textContent = '✅ Назначить';
+    assignBtn.textContent = '📋 Назначить игрока...';
     assignBtn.addEventListener('click', () => {
-      const pid = playerSelect.value;
-      if (!pid) { alert('Выберите игрока'); return; }
+      // Сначала покажем список игроков через prompt с подсказкой
+      const playerNames = state.players
+        .filter(p => p.name !== 'admin')
+        .map((p, i) => `${i+1}. ${p.name}`)
+        .join('\n');
+      const name = prompt(
+        `Введите имя игрока из списка:\n\n${playerNames}\n\nИли введите новое имя:`,
+        ''
+      );
+      if (!name) return;
+
+      let player = state.players.find(p => p.name === name && p.name !== 'admin');
+      if (!player) {
+        // Создаём нового игрока
+        player = {
+          id: 'p_' + Date.now(),
+          name: name.trim(),
+          phone: '',
+          isAdmin: false,
+        };
+        state.players.push(player);
+        savePlayers();
+      }
       slot.status = 'booked';
-      slot.ownerId = pid;
+      slot.ownerId = player.id;
       saveSlots();
       overlay.remove();
       refresh();
