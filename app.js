@@ -127,7 +127,7 @@ function showPage(pageId) {
     b.classList.toggle('active', b.dataset.page === pageId);
   });
   document.querySelectorAll('.admin-only').forEach(el => {
-    el.style.display = state.currentPlayer?.isAdmin ? '' : 'none';
+    el.style.display = (state.currentPlayer?.isAdmin || state.currentPlayer?.name === 'admin') ? '' : 'none';
   });
 }
 
@@ -242,10 +242,10 @@ function openSlotModal(slot) {
   actionsDiv.className = 'actions';
 
   const isMySlot = state.currentPlayer && slot.ownerId === state.currentPlayer.id;
-  const isAdmin = state.currentPlayer?.isAdmin;
+  const isAdmin = state.currentPlayer?.isAdmin || state.currentPlayer?.name === 'admin';
 
-  // Free slot -> only admin can assign a player
-  if (slot.status === 'free' && isAdmin) {
+  // Если админ — показываем кнопку назначения
+  if (isAdmin) {
     const selectLabel = document.createElement('p');
     selectLabel.style.cssText = 'margin: 8px 0 4px; color: var(--text2); font-size: 0.85rem;';
     selectLabel.textContent = 'Назначить игрока:';
@@ -780,7 +780,7 @@ function refresh() {
   renderProfile();
   renderAdmin();
   document.querySelectorAll('.admin-only').forEach(el => {
-    el.style.display = state.currentPlayer?.isAdmin ? '' : 'none';
+    el.style.display = (state.currentPlayer?.isAdmin || state.currentPlayer?.name === 'admin') ? '' : 'none';
   });
   document.getElementById('user-name').textContent = state.currentPlayer?.name || 'Не вошли';
   document.getElementById('btn-logout').style.display = state.currentPlayer ? '' : 'none';
