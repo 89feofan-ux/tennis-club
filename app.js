@@ -254,6 +254,9 @@ function openSlotModal(slot) {
     const playerSelect = document.createElement('select');
     playerSelect.style.cssText = 'width:100%; padding:8px; margin-bottom:8px;';
     const players = state.players.filter(p => !p.isAdmin);
+    console.log('=== ADMIN MODAL ===');
+    console.log('All players:', state.players.map(p => ({name: p.name, isAdmin: p.isAdmin})));
+    console.log('Filtered (non-admin):', players.map(p => p.name));
     playerSelect.innerHTML = '<option value="">— выберите —</option>';
     players.forEach(p => {
       const opt = document.createElement('option');
