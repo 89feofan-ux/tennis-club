@@ -244,19 +244,38 @@ function openSlotModal(slot) {
   const isMySlot = state.currentPlayer && slot.ownerId === state.currentPlayer.id;
   const isAdmin = state.currentPlayer?.isAdmin;
 
-  // Free slot -> book
-  if (slot.status === 'free' && state.currentPlayer) {
-    const bookBtn = document.createElement('button');
-    bookBtn.className = 'success';
-    bookBtn.textContent = 'Забронировать';
-    bookBtn.addEventListener('click', () => {
+  // Free slot -> only admin can assign a player
+  if (slot.status === 'free' && isAdmin) {
+    const selectLabel = document.createElement('p');
+    selectLabel.style.cssText = 'margin: 8px 0 4px; color: var(--text2); font-size: 0.85rem;';
+    selectLabel.textContent = 'Назначить игрока:';
+    modal.appendChild(selectLabel);
+
+    const playerSelect = document.createElement('select');
+    playerSelect.style.cssText = 'width:100%; padding:8px; margin-bottom:8px;';
+    const players = state.players.filter(p => !p.isAdmin);
+    playerSelect.innerHTML = '<option value="">— выберите —</option>';
+    players.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      playerSelect.appendChild(opt);
+    });
+    modal.appendChild(playerSelect);
+
+    const assignBtn = document.createElement('button');
+    assignBtn.className = 'success';
+    assignBtn.textContent = '✅ Назначить';
+    assignBtn.addEventListener('click', () => {
+      const pid = playerSelect.value;
+      if (!pid) { alert('Выберите игрока'); return; }
       slot.status = 'booked';
-      slot.ownerId = state.currentPlayer.id;
+      slot.ownerId = pid;
       saveSlots();
       overlay.remove();
       refresh();
     });
-    actionsDiv.appendChild(bookBtn);
+    actionsDiv.appendChild(assignBtn);
   }
 
   // My booked slot -> sell
