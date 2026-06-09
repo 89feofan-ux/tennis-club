@@ -1,9 +1,8 @@
-# Vercel serverless function for Telegram bot
+from http.server import BaseHTTPRequestHandler
 import json
-import os
 import requests
 
-BOT_TOKEN = "8948901627:AAGejhr0inMz8dbvRPTWLdc883-F0wNx8Zw"
+BOT_TOKEN="8948..."
 APP_URL = "https://tennis-club-o84m.vercel.app"
 
 def send_message(chat_id, text, reply_markup=None):
@@ -12,49 +11,49 @@ def send_message(chat_id, text, reply_markup=None):
     if reply_markup:
         data["reply_markup"] = json.dumps(reply_markup)
     try:
-        r = requests.post(url, data=data, timeout=10)
-        return r.json()
-    except Exception as e:
-        print(f"send_message error: {e}")
-        return None
+        requests.post(url, data=data, timeout=10)
+    except:
+        pass
 
-def handler(request):
-    """Vercel serverless function handler"""
-    try:
-        body = request.get("body", "{}")
-        if isinstance(body, str):
-            body = body.encode()
-        update = json.loads(body)
-    except Exception as e:
-        return {"statusCode": 200, "body": "OK"}
+class handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(length)
+            update = json.loads(body)
+        except:
+            self._respond(200, "OK")
+            return
 
-    print(f"Update received")
+        if "message" in update:
+            msg = update["message"]
+            chat_id = msg["chat"]["id"]
+            text = msg.get("text", "")
 
-    if "message" in update:
-        msg = update["message"]
-        chat_id = msg["chat"]["id"]
-        text = msg.get("text", "")
+            if text == "/start":
+                markup = {
+                    "inline_keyboard": [[
+                        {"text": "🎾 Открыть расписание", "web_app": {"url": f"{APP_URL}/index.html"}}
+                    ]]
+                }
+                send_message(chat_id,
+                    "🎾 <b>Теннисный Клуб</b>\n\n"
+                    "Здесь ты можешь:\n"
+                    "📅 Посмотреть свободное время на кортах\n"
+                    "✅ Забронировать слот\n"
+                    "🔄 Продать или купить время у других игроков\n\n"
+                    "Нажми кнопку ниже, чтобы открыть расписание 👇",
+                    markup)
+            else:
+                send_message(chat_id, "Привет! Нажми «🎾 Открыть расписание», чтобы начать.")
 
-        if text == "/start":
-            reply_markup = {
-                "inline_keyboard": [[
-                    {
-                        "text": "🎾 Открыть расписание",
-                        "web_app": {"url": f"{APP_URL}/index.html"}
-                    }
-                ]]
-            }
-            send_message(
-                chat_id,
-                "🎾 <b>Теннисный Клуб</b>\n\n"
-                "Здесь ты можешь:\n"
-                "📅 Посмотреть свободное время на кортах\n"
-                "✅ Забронировать слот\n"
-                "🔄 Продать или купить время у других игроков\n\n"
-                "Нажми кнопку ниже, чтобы открыть расписание 👇",
-                reply_markup=reply_markup
-            )
-        else:
-            send_message(chat_id, "Привет! Нажми «🎾 Открыть расписание», чтобы начать.")
+        self._respond(200, "OK")
 
-    return {"statusCode": 200, "body": "OK"}
+    def do_GET(self):
+        self._respond(200, "Bot webhook is running")
+
+    def _respond(self, code, text):
+        self.send_response(code)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        self.wfile.write(text.encode())
