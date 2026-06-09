@@ -35,6 +35,17 @@
         <button id="week-prev">◀</button>
         <span id="week-label">Не выбрана</span>
         <button id="week-next">▶</button>
+        <button id="btn-refresh" class="outline" style="margin-left:auto;">🔄</button>
+      </div>
+      <div class="filters" style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+        <input type="date" id="filter-date" style="flex:1; min-width:140px;" />
+        <select id="filter-time" style="flex:1; min-width:100px;">
+          <option value="">Любое время</option>
+        </select>
+        <select id="filter-court" style="flex:1; min-width:120px;">
+          <option value="">Все корты</option>
+        </select>
+        <button id="btn-filter-clear" class="outline">✕ Очистить</button>
       </div>
       <div id="week-grid"></div>
     </div>

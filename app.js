@@ -178,6 +178,10 @@ function showPage(pageId) {
 }
 
 // ----- RENDER: CALENDAR -----
+let filterDate = '';
+let filterTime = '';
+let filterCourt = '';
+
 function renderCalendar() {
   const grid = document.getElementById('week-grid');
   const label = document.getElementById('week-label');
@@ -200,6 +204,9 @@ function renderCalendar() {
     date.setDate(date.getDate() + d);
     const dateStr = date.toISOString().slice(0,10);
 
+    // Filter by date
+    if (filterDate && dateStr !== filterDate) continue;
+
     const col = document.createElement('div');
     col.className = 'day-col';
 
@@ -209,8 +216,16 @@ function renderCalendar() {
     col.appendChild(header);
 
     for (const court of state.courts) {
-      const courtSlots = state.slots.filter(s => s.courtId === court.id && s.date === dateStr)
+      // Filter by court
+      if (filterCourt && court.id !== filterCourt) continue;
+
+      let courtSlots = state.slots.filter(s => s.courtId === court.id && s.date === dateStr)
         .sort((a,b) => a.time.localeCompare(b.time));
+
+      // Filter by time
+      if (filterTime) {
+        courtSlots = courtSlots.filter(s => s.time >= filterTime);
+      }
 
       if (courtSlots.length === 0) continue;
 
@@ -262,6 +277,33 @@ function renderCalendar() {
 
     grid.appendChild(col);
   }
+}
+
+function updateFilterOptions() {
+  // Update time filter
+  const timeSelect = document.getElementById('filter-time');
+  const currentVal = timeSelect.value;
+  timeSelect.innerHTML = '<option value="">Любое время</option>';
+  for (let h = 6; h <= 23; h++) {
+    ['00', '30'].forEach(m => {
+      const t = `${String(h).padStart(2,'0')}:${m}`;
+      const opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = t;
+      timeSelect.appendChild(opt);
+    });
+  }
+  timeSelect.value = currentVal;
+
+  // Update court filter
+  const courtSelect = document.getElementById('filter-court');
+  courtSelect.innerHTML = '<option value="">Все корты</option>';
+  state.courts.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.name;
+    courtSelect.appendChild(opt);
+  });
 }
 
 // ----- MODAL -----
@@ -712,6 +754,35 @@ function initEvents() {
     renderCalendar();
   });
 
+  // Refresh button
+  document.getElementById('btn-refresh').addEventListener('click', async () => {
+    await refresh();
+    updateFilterOptions();
+  });
+
+  // Filters
+  document.getElementById('filter-date').addEventListener('change', (e) => {
+    filterDate = e.target.value;
+    renderCalendar();
+  });
+  document.getElementById('filter-time').addEventListener('change', (e) => {
+    filterTime = e.target.value;
+    renderCalendar();
+  });
+  document.getElementById('filter-court').addEventListener('change', (e) => {
+    filterCourt = e.target.value;
+    renderCalendar();
+  });
+  document.getElementById('btn-filter-clear').addEventListener('click', () => {
+    filterDate = '';
+    filterTime = '';
+    filterCourt = '';
+    document.getElementById('filter-date').value = '';
+    document.getElementById('filter-time').value = '';
+    document.getElementById('filter-court').value = '';
+    renderCalendar();
+  });
+
   // Login
   document.getElementById('btn-login').addEventListener('click', () => {
     const id = document.getElementById('player-select').value;
@@ -881,6 +952,7 @@ function initEvents() {
 async function refresh() {
   await loadState();
   renderCalendar();
+  updateFilterOptions();
   renderPlayers();
   renderMarket();
   renderProfile();
