@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Теннисный Клуб — Бронирование и Продажа</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <!-- HEADER -->
+  <header>
+    <div class="logo">🎾 TennisSwap</div>
+    <nav id="main-nav">
+      <button class="nav-btn" data-page="calendar">📅 Расписание</button>
+      <button class="nav-btn" data-page="market">🔄 Маркет</button>
+      <button class="nav-btn" data-page="profile">👤 Профиль</button>
+      <button class="nav-btn admin-only" data-page="admin">⚙️ Админка</button>
+    </nav>
+    <div class="user-badge" id="user-badge">
+      <span id="user-name">Не вошли</span>
+      <span id="user-balance-header" style="display:none; color:var(--green); font-weight:600;"></span>
+      <button id="btn-logout" style="display:none">Выйти</button>
+    </div>
+  </header>
+
+  <!-- PAGES -->
+  <main id="page-container">
+    <!-- Page: Calendar -->
+    <div class="page" id="page-calendar">
+      <h1>Расписание кортов</h1>
+      <div class="controls">
+        <button id="week-prev">◀</button>
+        <span id="week-label">Не выбрана</span>
+        <button id="week-next">▶</button>
+      </div>
+      <div id="week-grid"></div>
+    </div>
+
+    <!-- Page: Market -->
+    <div class="page" id="page-market">
+      <h1>Маркет — продажа слотов</h1>
+      <div id="market-list"></div>
+    </div>
+
+    <!-- Page: Profile -->
+    <div class="page" id="page-profile">
+      <div id="profile-login">
+        <h1>Вход</h1>
+        <p style="color:var(--text2); margin-bottom:12px;">Выберите игрока из списка.</p>
+        <select id="player-select" style="width:100%; max-width:300px;"></select>
+        <button id="btn-login" style="margin-top:8px;">Войти</button>
+        <div id="no-players-msg" style="display:none; margin-top:12px; color:var(--orange);">
+          <p>Нет ни одного игрока.</p>
+          <button id="btn-seed-default" class="success" style="margin-top:8px;">🔧 Создать admin и demo-данные</button>
+        </div>
+      </div>
+      <div id="profile-info" style="display:none">
+        <h1>Мои слоты</h1>
+        <div id="my-slots"></div>
+      </div>
+    </div>
+
+    <!-- Page: Admin -->
+    <div class="page" id="page-admin">
+      <h1>Администрирование</h1>
+
+      <section>
+        <h2>Игроки</h2>
+        <div class="inline-form">
+          <input type="text" id="player-name" placeholder="Имя игрока" />
+          <button id="btn-add-player">+ Добавить игрока</button>
+        </div>
+        <ul id="player-list"></ul>
+      </section>
+
+      <section>
+        <h2>Корты</h2>
+        <div class="inline-form">
+          <input type="text" id="court-name" placeholder="Название корта" />
+          <input type="number" id="court-price" placeholder="Цена за час (₽)" />
+          <button id="btn-add-court">+ Добавить корт</button>
+        </div>
+        <ul id="court-list"></ul>
+      </section>
+
+      <section>
+        <h2>Расписание на 7 дней</h2>
+        <div class="inline-form">
+          <input type="date" id="admin-week-start" />
+          <button id="btn-set-week">Установить эту неделю</button>
+        </div>
+        <div class="inline-form">
+          <input type="time" id="admin-start" value="08:00" />
+          <input type="time" id="admin-end" value="22:00" />
+          <input type="number" id="admin-interval" value="60" min="30" step="30" />
+          <button id="btn-gen-week">Сгенерировать 7 дней</button>
+        </div>
+        <p><small>Сначала установи корты, потом выбери неделю и сгенерируй расписание.</small></p>
+      </section>
+
+      <section>
+        <h2>Добавить отдельный слот</h2>
+        <div class="inline-form">
+          <select id="admin-court-select"></select>
+          <input type="date" id="admin-date" />
+          <input type="time" id="admin-time" />
+          <button id="btn-add-slot">+ Создать слот</button>
+        </div>
+      </section>
+      <section style="margin-top:32px; border-top:1px solid var(--border); padding-top:16px;">
+        <h2 style="color:var(--red);">Опасная зона</h2>
+        <button id="btn-reset-all" class="danger">🗑️ Сбросить все данные и начать заново</button>
+      </section>
+    </div>
+  </main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
