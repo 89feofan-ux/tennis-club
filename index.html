@@ -14,6 +14,7 @@
     <div class="logo">🎾 TennisSwap</div>
     <nav id="main-nav">
       <button class="nav-btn" data-page="calendar">📅 Расписание</button>
+      <button class="nav-btn" data-page="players">👥 Игроки</button>
       <button class="nav-btn" data-page="market">🔄 Маркет</button>
       <button class="nav-btn" data-page="profile">👤 Профиль</button>
       <button class="nav-btn admin-only" data-page="admin">⚙️ Админка</button>
@@ -36,6 +37,13 @@
         <button id="week-next">▶</button>
       </div>
       <div id="week-grid"></div>
+    </div>
+
+    <!-- Page: Players -->
+    <div class="page" id="page-players">
+      <h1>Игроки</h1>
+      <p style="color:var(--text2); margin-bottom:12px;">Контакты для связи и оплаты по СБП</p>
+      <div id="players-list"></div>
     </div>
 
     <!-- Page: Market -->
@@ -69,7 +77,8 @@
       <section>
         <h2>Игроки</h2>
         <div class="inline-form">
-          <input type="text" id="player-name" placeholder="Имя игрока" />
+          <input type="text" id="player-name" placeholder="ФИО игрока" />
+          <input type="text" id="player-phone" placeholder="Телефон (СБП)" style="width:160px;" />
           <button id="btn-add-player">+ Добавить игрока</button>
         </div>
         <ul id="player-list"></ul>

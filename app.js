@@ -460,6 +460,43 @@ function renderProfile() {
   }
 }
 
+// ----- RENDER: PLAYERS (справочник) -----
+function renderPlayers() {
+  const list = document.getElementById('players-list');
+  const players = state.players.filter(p => !p.isAdmin);
+
+  if (players.length === 0) {
+    list.innerHTML = '<p class="empty-msg">Список игроков пуст</p>';
+    return;
+  }
+
+  list.innerHTML = '';
+  players.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'market-card';
+    const hasPhone = p.phone && p.phone.trim();
+    card.innerHTML = `
+      <div class="info">
+        <strong>${p.name}</strong>
+        ${hasPhone ? `<small>📞 ${p.phone}</small>` : '<small style="color:var(--text2)">Телефон не указан</small>'}
+        <small style="color:var(--orange);">💳 Перевод по СБП</small>
+      </div>
+    `;
+    if (hasPhone) {
+      card.style.cursor = 'pointer';
+      card.title = 'Нажми, чтобы скопировать телефон';
+      card.addEventListener('click', () => {
+        navigator.clipboard.writeText(p.phone).then(() => {
+          const orig = card.innerHTML;
+          card.innerHTML = '<div class="info"><strong>✅ Скопировано!</strong></div>';
+          setTimeout(() => { card.innerHTML = orig; }, 1500);
+        }).catch(() => {});
+      });
+    }
+    list.appendChild(card);
+  });
+}
+
 // ----- RENDER: ADMIN -----
 function renderAdmin() {
   // -- Players --
@@ -468,7 +505,7 @@ function renderAdmin() {
   state.players.filter(p => !p.isAdmin).forEach(p => {
     const row = document.createElement('li');
     row.className = 'court-row';
-    row.innerHTML = `<span>${p.name}</span>`;
+    row.innerHTML = `<span>${p.name}</span><span style="color:var(--text2);font-size:0.85rem;">${p.phone || '—'}</span>`;
     const delBtn = document.createElement('button');
     delBtn.className = 'danger';
     delBtn.textContent = 'Удалить';
@@ -573,15 +610,18 @@ function initEvents() {
   // Admin: add player
   document.getElementById('btn-add-player').addEventListener('click', () => {
     const name = document.getElementById('player-name').value.trim();
-    if (!name) { alert('Введите имя игрока'); return; }
+    const phone = document.getElementById('player-phone').value.trim();
+    if (!name) { alert('Введите ФИО игрока'); return; }
     if (state.players.find(p => p.name === name)) { alert('Игрок с таким именем уже есть'); return; }
     state.players.push({
       id: 'p_' + Date.now(),
       name,
+      phone,
       isAdmin: false,
     });
     savePlayers();
     document.getElementById('player-name').value = '';
+    document.getElementById('player-phone').value = '';
     renderAdmin();
     renderProfile();
   });
@@ -716,6 +756,7 @@ function initEvents() {
 function refresh() {
   loadState();
   renderCalendar();
+  renderPlayers();
   renderMarket();
   renderProfile();
   renderAdmin();
