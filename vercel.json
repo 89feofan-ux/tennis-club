@@ -1,0 +1,11 @@
+{
+  "functions": {
+    "api/data.py": {
+      "memory": 128,
+      "maxDuration": 10
+    }
+  },
+  "rewrites": [
+    { "source": "/api/data", "destination": "/api/data" }
+  ]
+}

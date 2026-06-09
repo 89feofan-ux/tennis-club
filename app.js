@@ -49,31 +49,75 @@ function isToday(iso) {
   return iso === new Date().toISOString().slice(0,10);
 }
 
-// ----- STORE -----
-const Store = {
-  _ls(key, def) {
+// ----- STORE (серверный API) -----
+const API_URL = '/api/data';
+
+async function apiSave(data) {
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({action: 'save_all', ...data})
+    });
+  } catch(e) {
+    console.error('API save error:', e);
+  }
+}
+
+let serverData = {players: [], courts: [], slots: [], weekStart: null};
+let loadPromise = null;
+
+async function apiLoad() {
+  if (loadPromise) return loadPromise;
+  loadPromise = (async () => {
     try {
-      const raw = localStorage.getItem(key);
-      if (raw === null) return def;
-      return JSON.parse(raw);
-    } catch { return def; }
-  },
-  _set(key, val) { localStorage.setItem(key, JSON.stringify(val)); },
+      const r = await fetch(API_URL, {cache: 'no-cache'});
+      serverData = await r.json();
+      // Если сервер пуст, подгружаем из localStorage (миграция)
+      if ((!serverData.players || serverData.players.length === 0) && localStorage.getItem('ts_players')) {
+        serverData.players = JSON.parse(localStorage.getItem('ts_players') || '[]');
+        serverData.courts = JSON.parse(localStorage.getItem('ts_courts') || '[]');
+        serverData.slots = JSON.parse(localStorage.getItem('ts_slots') || '[]');
+        serverData.weekStart = localStorage.getItem('ts_week_start') || null;
+        await apiSave(serverData);
+        console.log('Migrated local data to server');
+      }
+    } catch(e) {
+      console.error('API load error, using local fallback:', e);
+      // Fallback to localStorage
+      serverData.players = JSON.parse(localStorage.getItem('ts_players') || '[]');
+      serverData.courts = JSON.parse(localStorage.getItem('ts_courts') || '[]');
+      serverData.slots = JSON.parse(localStorage.getItem('ts_slots') || '[]');
+      serverData.weekStart = localStorage.getItem('ts_week_start') || null;
+    }
+    loadPromise = null;
+  })();
+  return loadPromise;
+}
 
-  getPlayers() { return this._ls('ts_players', []); },
-  setPlayers(p) { this._set('ts_players', p); },
+async function apiSaveAll() {
+  await apiSave(serverData);
+}
 
+const Store = {
+  async init() { await apiLoad(); },
+
+  getPlayers() { return serverData.players || []; },
+  getCourts() { return serverData.courts || []; },
+  getSlots() { return serverData.slots || []; },
+  getWeekStart() { return serverData.weekStart || null; },
+
+  async setPlayers(p) { serverData.players = p; await apiSaveAll(); },
+  async setCourts(c) { serverData.courts = c; await apiSaveAll(); },
+  async setSlots(s) { serverData.slots = s; await apiSaveAll(); },
+  async setWeekStart(w) { serverData.weekStart = w; await apiSaveAll(); },
+
+  // Locally stored: current player ID
   getCurrentPlayerId() { return localStorage.getItem('ts_current_player') || null; },
   setCurrentPlayerId(id) {
     if (id) localStorage.setItem('ts_current_player', id);
     else localStorage.removeItem('ts_current_player');
   },
-
-  getCourts() { return this._ls('ts_courts', []); },
-  setCourts(c) { this._set('ts_courts', c); },
-
-  getSlots() { return this._ls('ts_slots', []); },
-  setSlots(s) { this._set('ts_slots', s); },
 
   getCurrentPlayer() {
     const id = this.getCurrentPlayerId();
@@ -81,12 +125,12 @@ const Store = {
     return this.getPlayers().find(p => p.id === id) || null;
   },
 
-  savePlayer(player) {
+  async savePlayer(player) {
     const players = this.getPlayers();
     const idx = players.findIndex(p => p.id === player.id);
     if (idx >= 0) players[idx] = player;
     else players.push(player);
-    this.setPlayers(players);
+    await this.setPlayers(players);
   },
 
   clearAll() {
@@ -95,6 +139,7 @@ const Store = {
     localStorage.removeItem('ts_slots');
     localStorage.removeItem('ts_current_player');
     localStorage.removeItem('ts_week_start');
+    serverData = {players: [], courts: [], slots: [], weekStart: null};
   }
 };
 
@@ -108,15 +153,16 @@ let state = {
   weekStart: null,
 };
 
-function loadState() {
+async function loadState() {
+  await Store.init(); // загружаем с сервера
   state.players = Store.getPlayers();
   state.courts = Store.getCourts();
   state.slots = Store.getSlots();
   state.currentPlayer = Store.getCurrentPlayer();
 }
 
-function saveSlots() { Store.setSlots(state.slots); }
-function savePlayers() { Store.setPlayers(state.players); }
+function saveSlots() { Store.setSlots(state.slots).catch(()=>{}); }
+function savePlayers() { Store.setPlayers(state.players).catch(()=>{}); }
 
 // ----- NAVIGATION -----
 function showPage(pageId) {
@@ -776,8 +822,8 @@ function initEvents() {
 }
 
 // ----- REFRESH -----
-function refresh() {
-  loadState();
+async function refresh() {
+  await loadState();
   renderCalendar();
   renderPlayers();
   renderMarket();
@@ -792,25 +838,25 @@ function refresh() {
 }
 
 // ----- INIT (first run seed) -----
-function firstRunSeed() {
+async function firstRunSeed() {
   if (state.players.length === 0) {
     state.players.push({
       id: 'p_admin',
       name: 'admin',
       isAdmin: true,
     });
-    savePlayers();
+    await savePlayers();
   }
-  const saved = localStorage.getItem('ts_week_start');
-  if (saved) {
-    state.weekStart = saved;
+  if (!state.weekStart) {
+    const saved = localStorage.getItem('ts_week_start');
+    if (saved) state.weekStart = saved;
   }
 }
 
 // ----- BOOT -----
-document.addEventListener('DOMContentLoaded', () => {
-  loadState();
-  firstRunSeed();
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadState();
+  await firstRunSeed();
   initEvents();
   showPage('calendar');
 
@@ -819,7 +865,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const tgId = String(tgUser.id);
     let player = state.players.find(p => p.telegramId === tgId);
     if (!player) {
-      // Register new player from Telegram
       const name = tgUser.first_name || tgUser.username || 'Player ' + tgId.slice(-4);
       player = {
         id: 'p_' + tgId,
@@ -828,13 +873,13 @@ document.addEventListener('DOMContentLoaded', () => {
         isAdmin: false,
       };
       state.players.push(player);
-      savePlayers();
+      await savePlayers();
     }
     Store.setCurrentPlayerId(player.id);
     state.currentPlayer = player;
   }
 
-  refresh();
+  await refresh();
 
   const today = new Date().toISOString().slice(0,10);
   document.getElementById('admin-date').value = today;
