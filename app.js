@@ -50,7 +50,7 @@ function isToday(iso) {
 }
 
 // ----- STORE (серверный API) -----
-const API_URL = '/api/data';
+const API_URL = '/api';
 
 async function apiSave(data) {
   try {
