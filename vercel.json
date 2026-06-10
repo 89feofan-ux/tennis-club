@@ -6,6 +6,12 @@
     }
   },
   "rewrites": [
-    { "source": "/api/data", "destination": "/api/data" }
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "builds": [
+    { "src": "api/data.py", "use": "@vercel/python" },
+    { "src": "*.html", "use": "@vercel/static" },
+    { "src": "*.js", "use": "@vercel/static" },
+    { "src": "*.css", "use": "@vercel/static" }
   ]
 }

@@ -571,10 +571,10 @@ function renderProfile() {
   // Update player select list
   const select = document.getElementById('player-select');
   select.innerHTML = '<option value="">— выберите игрока —</option>';
-  state.players.forEach(p => {
+  state.players.filter(p => !p.isAdmin).forEach(p => {
     const opt = document.createElement('option');
     opt.value = p.id;
-    opt.textContent = p.isAdmin ? '👑 ' + p.name : p.name;
+    opt.textContent = p.name;
     select.appendChild(opt);
   });
 
@@ -793,6 +793,33 @@ function initEvents() {
     state.currentPlayer = player;
     refresh();
     showPage('calendar');
+  });
+
+  // Admin login by password
+  document.getElementById('btn-admin-login').addEventListener('click', () => {
+    const password = document.getElementById('admin-password').value.trim();
+    if (password !== '03теннис') {
+      alert('Неверный пароль администратора');
+      return;
+    }
+    const admin = state.players.find(p => p.isAdmin);
+    if (!admin) {
+      // Create admin if doesn't exist
+      state.players.push({
+        id: 'p_admin',
+        name: 'admin',
+        isAdmin: true,
+      });
+      savePlayers();
+      Store.setCurrentPlayerId('p_admin');
+      state.currentPlayer = state.players.find(p => p.id === 'p_admin');
+    } else {
+      Store.setCurrentPlayerId(admin.id);
+      state.currentPlayer = admin;
+    }
+    document.getElementById('admin-password').value = '';
+    refresh();
+    showPage('admin');
   });
 
   // Logout

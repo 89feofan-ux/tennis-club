@@ -70,6 +70,13 @@
         <p style="color:var(--text2); margin-bottom:12px;">Выберите игрока из списка.</p>
         <select id="player-select" style="width:100%; max-width:300px;"></select>
         <button id="btn-login" style="margin-top:8px;">Войти</button>
+
+        <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:16px;">
+          <p style="color:var(--text2); margin-bottom:8px; font-size:0.9rem;">👑 Вход для администратора</p>
+          <input type="password" id="admin-password" placeholder="Пароль администратора" style="width:100%; max-width:300px; margin-bottom:8px;" />
+          <button id="btn-admin-login">Войти как администратор</button>
+        </div>
+
         <div id="no-players-msg" style="display:none; margin-top:12px; color:var(--orange);">
           <p>Нет ни одного игрока.</p>
           <button id="btn-seed-default" class="success" style="margin-top:8px;">🔧 Создать admin и demo-данные</button>
