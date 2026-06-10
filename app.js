@@ -187,6 +187,22 @@ function renderCalendar() {
   const label = document.getElementById('week-label');
 
   if (!state.weekStart) {
+    // Auto-detect from existing slots or local storage
+    const saved = localStorage.getItem('ts_week_start');
+    if (saved) {
+      state.weekStart = saved;
+    } else if (state.slots.length > 0) {
+      const dates = [...new Set(state.slots.map(s => s.date))].sort();
+      const first = new Date(dates[0] + 'T00:00:00');
+      const day = first.getDay();
+      const diff = first.getDate() - day + (day === 0 ? -6 : 1);
+      first.setDate(diff);
+      state.weekStart = first.toISOString().slice(0,10);
+      Store.setWeekStart(state.weekStart).catch(()=>{});
+    }
+  }
+
+  if (!state.weekStart) {
     label.textContent = 'Неделя не выбрана';
     grid.innerHTML = '<p class="empty-msg">Админ ещё не установил расписание на эту неделю.</p>';
     return;
