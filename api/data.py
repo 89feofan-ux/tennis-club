@@ -18,9 +18,8 @@ def kv_get(key):
         return None
 
 def kv_set(key, value):
-    val = json.dumps(value, ensure_ascii=False)
     url = f"{KV_URL}/set/{key}"
-    data = json.dumps(val).encode()
+    data = json.dumps(value, ensure_ascii=False).encode()
     req = Request(url, data=data, headers={
         "Authorization": f"Bearer {KV_TOKEN}",
         "Content-Type": "application/json",
