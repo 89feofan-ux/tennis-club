@@ -46,7 +46,6 @@ class handler(BaseHTTPRequestHandler):
                 }
                 send_message(chat_id,
                     "🎾 <b>TennisSwap — бронирование кортов</b>\n\n"
-                    "Нажми кнопку ниже, чтобы открыть приложение.\n"
                     "Выбери игрока из списка или войди как администратор.",
                     reply_markup
                 )
