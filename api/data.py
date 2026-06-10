@@ -1,33 +1,62 @@
-# Vercel serverless API — data in global variable (persists between calls)
+# Vercel serverless API — data in Upstash Redis (persistent)
 import json
+import os
 from http.server import BaseHTTPRequestHandler
+from urllib.request import Request, urlopen
 
-_data = None
+KV_URL = os.environ.get("KV_REST_API_URL", "https://holy-beagle-145944.upstash.io")
+KV_TOKEN = os.environ.get("KV_REST_API_TOKEN", "gQAAAAAAAjoYAAIgcDFmMGZkOTllYTdiNzE0MzExYTk3MjJkZjU5NDA2Y2EwOA")
 
-def get_data():
-    global _data
-    if _data is None:
-        _data = {"players": [], "courts": [], "slots": [], "weekStart": None}
-    return _data
+def kv_get(key):
+    url = f"{KV_URL}/get/{key}"
+    req = Request(url, headers={"Authorization": f"Bearer {KV_TOKEN}"})
+    try:
+        resp = urlopen(req, timeout=5)
+        data = json.loads(resp.read().decode())
+        return json.loads(data["result"]) if data.get("result") else None
+    except:
+        return None
+
+def kv_set(key, value):
+    val = json.dumps(value, ensure_ascii=False)
+    url = f"{KV_URL}/set/{key}"
+    import urllib.parse
+    data = urllib.parse.urlencode({"data": val}).encode()
+    req = Request(url, data=data, headers={"Authorization": f"Bearer {KV_TOKEN}"})
+    try:
+        urlopen(req, timeout=5)
+        return True
+    except:
+        return False
+
+def load_data():
+    data = kv_get("ts_data")
+    if data:
+        return data
+    return {"players": [], "courts": [], "slots": [], "weekStart": None}
+
+def save_data(data):
+    kv_set("ts_data", data)
 
 class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self._json(200, {})
 
     def do_GET(self):
-        self._json(200, get_data())
+        self._json(200, load_data())
 
     def do_POST(self):
         length = int(self.headers.get('Content-Length', 0))
         body = json.loads(self.rfile.read(length).decode())
         action = body.get("action")
-        data = get_data()
+        data = load_data()
 
         if action == "save_all":
             if "players" in body: data["players"] = body["players"]
             if "courts" in body: data["courts"] = body["courts"]
             if "slots" in body: data["slots"] = body["slots"]
             if "weekStart" in body: data["weekStart"] = body["weekStart"]
+            save_data(data)
             self._json(200, {"ok": True})
         elif action == "ping":
             self._json(200, {"ok": True, "players": len(data.get("players",[]))})
