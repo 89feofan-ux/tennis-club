@@ -2,7 +2,7 @@
 import json
 from http.server import BaseHTTPRequestHandler
 
-BOT_TOKEN = "8948901627:***"
+BOT_TOKEN = "8948901627:AAH8tbHmqZFRhdaETXSIDROvcvsyRrL_Goc"
 
 def send_message(chat_id, text, reply_markup=None):
     import http.client
@@ -26,7 +26,7 @@ class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         try:
-            length = int(self.headers.get('Content-Length', 0))
+            length = int(self.headers.get(\'Content-Length\', 0))
             body = json.loads(self.rfile.read(length).decode())
 
             msg = body.get("message", {})
@@ -59,7 +59,7 @@ class handler(BaseHTTPRequestHandler):
 
     def _json(self, code, obj):
         self.send_response(code)
-        self.send_header('Content-type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header(\'Content-type\', \'application/json\')
+        self.send_header(\'Access-Control-Allow-Origin\', \'*\')
         self.end_headers()
         self.wfile.write(json.dumps(obj, ensure_ascii=False).encode())
