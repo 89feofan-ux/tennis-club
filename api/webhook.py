@@ -17,6 +17,9 @@ def send_message(chat_id, text, reply_markup=None):
     ))
 
 class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self._json(200, {"status": "ok", "endpoint": "telegram webhook"})
+
     def do_POST(self):
         length = int(self.headers.get('Content-Length', 0))
         body = json.loads(self.rfile.read(length).decode())
