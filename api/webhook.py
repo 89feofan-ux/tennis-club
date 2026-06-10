@@ -1,54 +1,54 @@
-from http.server import BaseHTTPRequestHandler
+# Vercel serverless API — webhook for Telegram bot
 import json
 import urllib.request
 import urllib.parse
+from http.server import BaseHTTPRequestHandler
 
-BOT_TOKEN="8948901627:AAGejhr0inMz8dbvRPTWLdc883-F0wNx8Zw"
-APP_URL="https://tennis-club-o84m.vercel.app"
+BOT_TOKEN = "8948901627:***"
+BOT_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
-def send_tg(method, data):
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/{method}"
-    body = urllib.parse.urlencode(data).encode()
-    req = urllib.request.Request(url, data=body, method="POST")
-    try:
-        urllib.request.urlopen(req, timeout=10)
-    except:
-        pass
+def send_message(chat_id, text, reply_markup=None):
+    payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
+    if reply_markup:
+        payload["reply_markup"] = json.dumps(reply_markup)
+    data = urllib.parse.urlencode(payload).encode()
+    urllib.request.urlopen(urllib.request.Request(
+        f"{BOT_API}/sendMessage", data=data, method="POST"
+    ))
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
-        try:
-            length = int(self.headers.get('Content-Length', 0))
-            body = self.rfile.read(length)
-            update = json.loads(body)
-        except:
-            self._ok()
+        length = int(self.headers.get('Content-Length', 0))
+        body = json.loads(self.rfile.read(length).decode())
+
+        msg = body.get("message", {})
+        chat_id = msg.get("chat", {}).get("id")
+        text = msg.get("text", "")
+
+        if not chat_id:
+            self._json(200, {"ok": False})
             return
 
-        if "message" in update:
-            msg = update["message"]
-            chat_id = msg["chat"]["id"]
-            text = msg.get("text", "")
+        if text == "/start":
+            mini_app_url = "https://tennis-swap.vercel.app"
+            reply_markup = {
+                "inline_keyboard": [[
+                    {"text": "🎾 Открыть TennisSwap", "web_app": {"url": mini_app_url}}
+                ]]
+            }
+            send_message(chat_id,
+                "🎾 <b>TennisSwap — бронирование кортов</b>\n\n"
+                "Нажми кнопку ниже, чтобы открыть приложение.\n"
+                "Выбери игрока из списка или войди как администратор.",
+                reply_markup
+            )
+        else:
+            send_message(chat_id, "Используй /start чтобы открыть TennisSwap")
 
-            if text == "/start":
-                markup = json.dumps({
-                    "inline_keyboard": [[
-                        {"text": "🎾 Открыть расписание", "web_app": {"url": f"{APP_URL}/index.html"}}
-                    ]]
-                })
-                send_tg("sendMessage", {
-                    "chat_id": chat_id,
-                    "text": "🎾 Теннисный Клуб\n\nЗдесь ты можешь:\n📅 Посмотреть расписание\n✅ Забронировать слот\n🔄 Продать время другим игрокам\n\nНажми кнопку ниже:",
-                    "reply_markup": markup
-                })
+        self._json(200, {"ok": True})
 
-        self._ok()
-
-    def do_GET(self):
-        self._ok()
-
-    def _ok(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'text/plain')
+    def _json(self, code, obj):
+        self.send_response(code)
+        self.send_header('Content-type', 'application/json')
         self.end_headers()
-        self.wfile.write(b"OK")
+        self.wfile.write(json.dumps(obj, ensure_ascii=False).encode())
