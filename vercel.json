@@ -1,17 +1,11 @@
 {
-  "functions": {
-    "api/data.py": {
-      "memory": 128,
-      "maxDuration": 10
-    }
-  },
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ],
   "builds": [
     { "src": "api/data.py", "use": "@vercel/python" },
     { "src": "*.html", "use": "@vercel/static" },
     { "src": "*.js", "use": "@vercel/static" },
     { "src": "*.css", "use": "@vercel/static" }
+  ],
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
