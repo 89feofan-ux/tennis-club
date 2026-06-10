@@ -873,6 +873,7 @@ function initEvents() {
     state.weekStart = d.toISOString().slice(0,10);
     state.weekOffset = 0;
     localStorage.setItem('ts_week_start', state.weekStart);
+    Store.setWeekStart(state.weekStart).catch(()=>{});
     renderCalendar();
     showPage('calendar');
     alert(`Неделя установлена: ${formatDateShort(state.weekStart)}`);
@@ -918,6 +919,7 @@ function initEvents() {
       }
     }
     saveSlots();
+    Store.setWeekStart(state.weekStart).catch(()=>{});
     renderCalendar();
     alert(`Сгенерировано ${added} слотов на неделю`);
   });
