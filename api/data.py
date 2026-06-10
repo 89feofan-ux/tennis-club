@@ -20,9 +20,11 @@ def kv_get(key):
 def kv_set(key, value):
     val = json.dumps(value, ensure_ascii=False)
     url = f"{KV_URL}/set/{key}"
-    import urllib.parse
-    data = urllib.parse.urlencode({"data": val}).encode()
-    req = Request(url, data=data, headers={"Authorization": f"Bearer {KV_TOKEN}"})
+    data = json.dumps(val).encode()
+    req = Request(url, data=data, headers={
+        "Authorization": f"Bearer {KV_TOKEN}",
+        "Content-Type": "application/json",
+    })
     try:
         urlopen(req, timeout=5)
         return True
